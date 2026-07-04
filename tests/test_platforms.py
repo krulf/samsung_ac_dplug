@@ -42,8 +42,9 @@ async def test_switch_turn_on(hass):
 async def test_filter_life_unknown_when_counter_untracked(hass):
     from .common import STATE
 
-    # used > total -> not a trustworthy figure -> None -> "unknown".
-    await setup_polling(hass, {**STATE, "AC_ADD2_FILTER_USE_TIME": "600", "AC_ADD2_FILTERTIME": "500"})
+    # used (÷10) > total -> not a trustworthy figure -> None -> "unknown".
+    # 10000 tenths = 1000 h, above the 500 h interval (real "untracked" sentinel).
+    await setup_polling(hass, {**STATE, "AC_ADD2_FILTER_USE_TIME": "10000", "AC_ADD2_FILTERTIME": "500"})
     assert hass.states.get(_suffixed(hass, "sensor", "filter_life")).state == "unknown"
 
 
@@ -71,7 +72,8 @@ async def test_sensor_values(hass):
     outdoor = _suffixed(hass, "sensor", "outdoor_temperature")
     assert hass.states.get(outdoor).state == "25.0"  # 77 °F
     filter_life = _suffixed(hass, "sensor", "filter_life")
-    assert hass.states.get(filter_life).state == "80"  # 1 - 100/500
+    # FILTER_USE_TIME=100 tenths -> 10 h; 1 - 10/500 = 98%.
+    assert hass.states.get(filter_life).state == "98"
     assert hass.states.get(_suffixed(hass, "sensor", "error_code")).state == "OK"
     # AC_ADD2_USEDTIME is tenths of an hour: STATE has "100" -> 10.0 h.
     # (entity_id is name-based: "Operating time" -> ..._operating_time)

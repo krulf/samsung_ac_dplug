@@ -71,16 +71,21 @@ def _deci_kwh(v: str | None) -> float | None:
 def _filter_life(state: dict[str, str]) -> int | None:
     """Remaining filter life as a percentage.
 
-    used = hours since last clean (AC_ADD2_FILTER_USE_TIME),
-    total = cleaning interval / total hours (AC_ADD2_FILTERTIME).
+    used = operating time since last clean (AC_ADD2_FILTER_USE_TIME, in tenths of
+    an hour -> ÷10 for hours), total = cleaning interval in hours
+    (AC_ADD2_FILTERTIME, e.g. 180/300/500/700).
     """
     used = _to_int(state.get(ATTR_FILTER_TIME))
     total = _to_int(state.get(ATTR_FILTER_MAX))
-    # Some units report sentinel values (e.g. used=10000, total=500) when the
-    # filter counter is not actually tracked; only report a trustworthy figure.
-    if used is None or total is None or total <= 0 or used > total:
+    if used is None or total is None or total <= 0:
         return None
-    return round((1 - used / total) * 100)
+    used_hours = used / 10
+    # Some units report a sentinel (e.g. used=10000 -> 1000 h, above any interval)
+    # when the filter counter is not actually tracked; only report a trustworthy
+    # figure.
+    if used_hours > total:
+        return None
+    return round((1 - used_hours / total) * 100)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -136,6 +141,7 @@ SENSORS: tuple[AcSensor, ...] = (
         key="filter_use_time",
         translation_key="filter_use_time",
         attr=ATTR_FILTER_TIME,
+        convert=_deci_hours,
         native_unit_of_measurement=UnitOfTime.HOURS,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,

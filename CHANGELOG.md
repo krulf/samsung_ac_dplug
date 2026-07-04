@@ -3,6 +3,14 @@
 All notable changes to this integration are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.1.3 — 2026-07-05
+
+### Fixed
+- **Filter life** and **Filter use time** sensors: `AC_ADD2_FILTER_USE_TIME` is
+  reported in tenths of an hour (like the operating-time counter), so both were
+  off by 10× and filter life dropped ten times too fast. They are now scaled
+  correctly (÷10).
+
 ## 1.1.2 — 2026-07-04
 
 ### Changed
