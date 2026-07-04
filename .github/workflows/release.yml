@@ -43,7 +43,9 @@ jobs:
             f {print}
           ' CHANGELOG.md | sed '/./,$!d' > RELEASE_BODY.md
           if [ ! -s RELEASE_BODY.md ]; then
-            echo "See [CHANGELOG.md](CHANGELOG.md) for details." > RELEASE_BODY.md
+            echo "::error::No release notes for $VER in CHANGELOG.md."
+            echo "Add a '## $VER — <date>' section before tagging."
+            exit 1
           fi
           echo "----- release body -----"; cat RELEASE_BODY.md
       - name: Create GitHub release
