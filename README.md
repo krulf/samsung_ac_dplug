@@ -14,7 +14,9 @@ Protocol layer: [`pysamsung-dplug`](https://github.com/porech/pysamsung-dplug).
   Cool, Smart Saver, Color of Wind). Controls and presets are offered only when the
   unit actually supports them (decoded from its capability code).
 - **Sensors**: indoor & outdoor temperature, humidity, operating time, filter use
-  time, filter life %, error code, device clock, and a schedules overview.
+  time, filter life %, error code, device clock, and a schedules overview. On units
+  that meter energy, a cumulative **energy** sensor (kWh) is added for the Energy
+  dashboard.
 - **Switches**: Purify (SPi), Auto-clean, Display light, Sterilize, Smart on, Weather.
 - **Numbers**: Sleep / On / Off timers, Energy target.
 - **Selects**: Occupancy, Beep volume, Front panel, Filter cleaning interval.
@@ -51,9 +53,13 @@ The current schedules are also shown by the **Schedules** diagnostic sensor.
 **Other device actions** (offered by the protocol; availability depends on the unit):
 
 - `samsung_ac_dplug.get_power_usage` — return recorded power-usage history for a range
-  (hourly/daily); requires the unit's power logging.
+  (hourly/daily); requires the unit's power logging. Values are cumulative running
+  totals (kWh and operating hours).
 - `samsung_ac_dplug.set_power_logging` / `reset_power_logging` — turn usage logging on/off
   or clear it.
+- `samsung_ac_dplug.get_power_debug` — diagnostic: return the unit's raw power values
+  (capability code, USEDWATT/USEDPOWER, logging mode, a usage sample), for
+  troubleshooting metering support.
 - `samsung_ac_dplug.set_nickname` — set the nickname stored on the unit.
 - `samsung_ac_dplug.get_region_code` / `set_region_code` — read or set the region code.
 
