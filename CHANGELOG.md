@@ -3,6 +3,13 @@
 All notable changes to this integration are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.1.2 — 2026-07-04
+
+### Changed
+- **Energy sensor** now reads the cumulative kWh from the unit's live pushed
+  state (`AC_ADD2_USEDPOWER`) instead of polling `GetPowerUsage`, so it updates
+  in real time and without extra requests to the unit.
+
 ## 1.1.1 — 2026-07-04
 
 ### Fixed

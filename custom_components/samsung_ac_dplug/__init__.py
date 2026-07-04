@@ -6,7 +6,6 @@ import logging
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers.event import async_track_time_interval
 from samsung_dplug import SamsungAcClient, SamsungAcStream, build_ssl_context
 
 from .const import (
@@ -18,11 +17,7 @@ from .const import (
     DEFAULT_LIVE_UPDATES,
     DEFAULT_SCAN_INTERVAL,
 )
-from .coordinator import (
-    ENERGY_REFRESH_INTERVAL,
-    SamsungAcConfigEntry,
-    SamsungAcCoordinator,
-)
+from .coordinator import SamsungAcConfigEntry, SamsungAcCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.CLIMATE, Platform.SENSOR, Platform.SWITCH, Platform.NUMBER, Platform.SELECT]
@@ -59,14 +54,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: SamsungAcConfigEntry) ->
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload))
-
-    # Units that meter energy: keep the cumulative kWh reading fresh on a slow
-    # timer (GetPowerUsage is a separate request, not part of the pushed state).
-    if coordinator.usage_supported:
-        hass.async_create_task(coordinator.async_refresh_energy())
-        entry.async_on_unload(
-            async_track_time_interval(hass, coordinator._async_energy_tick, ENERGY_REFRESH_INTERVAL)
-        )
     return True
 
 

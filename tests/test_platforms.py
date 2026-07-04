@@ -81,31 +81,12 @@ async def test_sensor_values(hass):
 async def test_energy_sensor(hass):
     from .common import STATE
 
-    # OPTIONCODE with the usage bit (16384) set -> the unit meters energy.
-    entry, client = await setup_polling(hass, {**STATE, "AC_ADD2_OPTIONCODE": "16386"})
-    # GetPowerUsage reports a cumulative running total; the latest is the meter.
-    client.async_get_power_usage.return_value = [
-        PowerUsageEntry(datetime(2026, 6, 17, 8, 0), 12.3, 100.0),
-        PowerUsageEntry(datetime(2026, 6, 17, 9, 0), 12.5, 100.5),
-    ]
-    await entry.runtime_data.async_refresh_energy()
-    await hass.async_block_till_done()
-    assert hass.states.get(_suffixed(hass, "sensor", "energy")).state == "12.5"
-
-
-async def test_energy_sensor_uses_latest_not_max(hass):
-    from .common import STATE
-
-    # A reset happened mid-window: readings drop. Latest bucket (out of order)
-    # must win over the higher pre-reset value.
-    entry, client = await setup_polling(hass, {**STATE, "AC_ADD2_OPTIONCODE": "16386"})
-    client.async_get_power_usage.return_value = [
-        PowerUsageEntry(datetime(2026, 6, 17, 10, 0), 0.4, 1.0),   # latest, post-reset
-        PowerUsageEntry(datetime(2026, 6, 17, 8, 0), 99.0, 500.0),  # older, pre-reset
-    ]
-    await entry.runtime_data.async_refresh_energy()
-    await hass.async_block_till_done()
-    assert hass.states.get(_suffixed(hass, "sensor", "energy")).state == "0.4"
+    # OPTIONCODE with the usage bit (16384) set -> the unit meters energy;
+    # AC_ADD2_USEDPOWER is cumulative energy in tenths of a kWh.
+    await setup_polling(
+        hass, {**STATE, "AC_ADD2_OPTIONCODE": "16386", "AC_ADD2_USEDPOWER": "1955"}
+    )
+    assert hass.states.get(_suffixed(hass, "sensor", "energy")).state == "195.5"
 
 
 async def test_no_energy_sensor_without_usage_bit(hass):

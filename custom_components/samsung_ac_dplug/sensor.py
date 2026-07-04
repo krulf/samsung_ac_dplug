@@ -28,6 +28,7 @@ from .const import (
     ATTR_HUMIDITY,
     ATTR_OUTDOOR_TEMP,
     ATTR_TEMPNOW,
+    ATTR_USED_POWER,
     ATTR_USED_TIME,
 )
 import datetime
@@ -55,6 +56,13 @@ def _error(v: str | None) -> str:
 
 def _deci_hours(v: str | None) -> float | None:
     """AC_ADD2_USEDTIME is a cumulative operating time in tenths of an hour;
+    negative means the meter is off / no data."""
+    i = _to_int(v)
+    return round(i / 10, 1) if i is not None and i >= 0 else None
+
+
+def _deci_kwh(v: str | None) -> float | None:
+    """AC_ADD2_USEDPOWER is cumulative energy in tenths of a kWh (÷10 -> kWh);
     negative means the meter is off / no data."""
     i = _to_int(v)
     return round(i / 10, 1) if i is not None and i >= 0 else None
@@ -174,11 +182,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 
 class SamsungAcEnergySensor(SamsungAcEntity, SensorEntity):
-    """Cumulative energy consumption (kWh), from GetPowerUsage.
+    """Cumulative energy consumption (kWh), from AC_ADD2_USEDPOWER.
 
     Only created on units that meter energy (AC_ADD2_OPTIONCODE usage bit). The
-    value is a running total maintained by the unit; the coordinator refreshes it
-    on a slow timer. TOTAL_INCREASING lets HA handle meter resets and deltas.
+    value is a running total the unit reports in the pushed state (tenths of a
+    kWh); it matches the GetPowerUsage cumulative total. TOTAL_INCREASING lets HA
+    handle meter resets and deltas.
     """
 
     _attr_translation_key = "energy"
@@ -192,7 +201,7 @@ class SamsungAcEnergySensor(SamsungAcEntity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
-        return self.coordinator.energy_kwh
+        return _deci_kwh(self._state.get(ATTR_USED_POWER))
 
 
 class SamsungAcClockSensor(SamsungAcEntity, SensorEntity):
