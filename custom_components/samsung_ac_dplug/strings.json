@@ -127,6 +127,9 @@
       "used_time": {
         "name": "Operating time"
       },
+      "energy": {
+        "name": "Energy"
+      },
       "filter_use_time": {
         "name": "Filter use time"
       },

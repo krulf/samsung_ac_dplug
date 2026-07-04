@@ -12,7 +12,12 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory, UnitOfTemperature, UnitOfTime
+from homeassistant.const import (
+    EntityCategory,
+    UnitOfEnergy,
+    UnitOfTemperature,
+    UnitOfTime,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -163,7 +168,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     ]
     entities.append(SamsungAcClockSensor(coordinator))
     entities.append(SamsungAcSchedulesSensor(coordinator))
+    if coordinator.usage_supported:
+        entities.append(SamsungAcEnergySensor(coordinator))
     async_add_entities(entities)
+
+
+class SamsungAcEnergySensor(SamsungAcEntity, SensorEntity):
+    """Cumulative energy consumption (kWh), from GetPowerUsage.
+
+    Only created on units that meter energy (AC_ADD2_OPTIONCODE usage bit). The
+    value is a running total maintained by the unit; the coordinator refreshes it
+    on a slow timer. TOTAL_INCREASING lets HA handle meter resets and deltas.
+    """
+
+    _attr_translation_key = "energy"
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+
+    def __init__(self, coordinator: SamsungAcCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{self._duid}_energy"
+
+    @property
+    def native_value(self) -> float | None:
+        return self.coordinator.energy_kwh
 
 
 class SamsungAcClockSensor(SamsungAcEntity, SensorEntity):

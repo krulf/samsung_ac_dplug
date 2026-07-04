@@ -78,6 +78,29 @@ async def test_sensor_values(hass):
     assert hass.states.get(_suffixed(hass, "sensor", "operating_time")).state == "10.0"
 
 
+async def test_energy_sensor(hass):
+    from .common import STATE
+
+    # OPTIONCODE with the usage bit (16384) set -> the unit meters energy.
+    entry, client = await setup_polling(hass, {**STATE, "AC_ADD2_OPTIONCODE": "16386"})
+    # GetPowerUsage reports a cumulative running total; the latest is the meter.
+    client.async_get_power_usage.return_value = [
+        PowerUsageEntry(datetime(2026, 6, 17, 8, 0), 12.3, 100.0),
+        PowerUsageEntry(datetime(2026, 6, 17, 9, 0), 12.5, 100.5),
+    ]
+    await entry.runtime_data.async_refresh_energy()
+    await hass.async_block_till_done()
+    assert hass.states.get(_suffixed(hass, "sensor", "energy")).state == "12.5"
+
+
+async def test_no_energy_sensor_without_usage_bit(hass):
+    # Default STATE has OPTIONCODE "2" (no usage bit) -> no energy sensor.
+    await setup_polling(hass)
+    assert not any(
+        e.endswith("energy") for e in hass.states.async_entity_ids("sensor")
+    )
+
+
 async def test_power_debug_service(hass):
     _, client = await setup_polling(hass)
     cid = _only(hass, "climate")

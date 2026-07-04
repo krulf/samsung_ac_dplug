@@ -127,6 +127,9 @@
       "used_time": {
         "name": "Tempo di funzionamento"
       },
+      "energy": {
+        "name": "Energia"
+      },
       "filter_use_time": {
         "name": "Ore filtro"
       },

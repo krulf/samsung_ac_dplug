@@ -27,7 +27,11 @@ from samsung_dplug import (
     Schedule,
 )
 
-from .const import DOMAIN
+from .const import ATTR_OPTIONCODE, DOMAIN, OPTION_USAGE
+
+# Cumulative energy (kWh) is not part of the pushed DeviceState; it is fetched
+# with GetPowerUsage on a slow cadence (energy statistics are hourly anyway).
+ENERGY_REFRESH_INTERVAL = timedelta(minutes=5)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,6 +61,9 @@ class SamsungAcCoordinator(DataUpdateCoordinator[dict[str, str]]):
         self.entry = entry
         # On-device schedules (cached; refreshed on demand and after mutations).
         self.schedules: list[Schedule] = []
+        # Latest cumulative energy reading (kWh) from GetPowerUsage, or None until
+        # the first fetch completes / on units that don't meter energy.
+        self.energy_kwh: float | None = None
 
     async def _async_update_data(self) -> dict[str, str]:
         if self.stream is not None:
@@ -120,6 +127,40 @@ class SamsungAcCoordinator(DataUpdateCoordinator[dict[str, str]]):
         await self._api.async_delete_schedule(schedule_id)
         await self.async_refresh_schedules()
 
+    # -- energy metering ----------------------------------------------------
+    @property
+    def usage_supported(self) -> bool:
+        """Whether the unit meters cumulative energy (AC_ADD2_OPTIONCODE usage bit)."""
+        oc = (self.data or {}).get(ATTR_OPTIONCODE)
+        return bool(oc and oc.lstrip("-").isdigit() and int(oc) & OPTION_USAGE)
+
+    async def _async_energy_tick(self, _now: datetime.datetime) -> None:
+        """Timer callback (async_track_time_interval) wrapping the energy refresh."""
+        await self.async_refresh_energy()
+
+    async def async_refresh_energy(self) -> float | None:
+        """Fetch the current cumulative energy (kWh) via GetPowerUsage.
+
+        GetPowerUsage reports a running cumulative total (not per-bucket deltas),
+        so the most recent valid reading is the current meter value. A negative
+        value is the "logging off / no data" sentinel and is ignored.
+        """
+        if not self.usage_supported:
+            return None
+        end = dt_util.now()
+        try:
+            entries = await self._api.async_get_power_usage(
+                end - timedelta(days=2), end, "Hour", tz=self._tz
+            )
+        except SamsungAcError:
+            self.logger.debug("energy refresh failed", exc_info=True)
+            return self.energy_kwh
+        valid = [e.power_kwh for e in entries if e.power_kwh is not None and e.power_kwh >= 0]
+        if valid:
+            self.energy_kwh = round(max(valid), 1)
+            self.async_update_listeners()
+        return self.energy_kwh
+
     # -- extra device commands (power usage/logging, nickname, region) --
     async def async_get_power_usage(
         self, date_from: datetime.datetime, date_to: datetime.datetime, unit: str
@@ -149,8 +190,8 @@ class SamsungAcCoordinator(DataUpdateCoordinator[dict[str, str]]):
         a test reading (e.g. whether AC_ADD2_USEDWATT is a real live power value).
         """
         state = self.data or {}
-        oc = state.get("AC_ADD2_OPTIONCODE")
-        usage_bit = bool(int(oc) & 16384) if oc and oc.lstrip("-").isdigit() else None
+        oc = state.get(ATTR_OPTIONCODE)
+        usage_bit = bool(int(oc) & OPTION_USAGE) if oc and oc.lstrip("-").isdigit() else None
         raw = {
             k: state.get(k)
             for k in (

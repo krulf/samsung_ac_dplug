@@ -41,6 +41,12 @@ ATTR_SPI = "AC_ADD_SPI"
 ATTR_AUTOCLEAN = "AC_ADD_AUTOCLEAN"
 ATTR_USED_TIME = "AC_ADD2_USEDTIME"
 ATTR_USED_POWER = "AC_ADD2_USEDPOWER"
+ATTR_OPTIONCODE = "AC_ADD2_OPTIONCODE"
+
+# AC_ADD2_OPTIONCODE capability bits. `usage` declares that the unit meters
+# cumulative energy (kWh) via GetPowerUsage; without it only operating hours are
+# tracked. Mirrors the official app's isUsageEnable check.
+OPTION_USAGE = 16384
 ATTR_FILTER_TIME = "AC_ADD2_FILTER_USE_TIME"
 ATTR_FILTER_MAX = "AC_ADD2_FILTERTIME"
 ATTR_CLEAR_FILTER = "AC_ADD_CLEAR_FILTER_ALARM"
