@@ -142,8 +142,11 @@ class SamsungAcCoordinator(DataUpdateCoordinator[dict[str, str]]):
         """Fetch the current cumulative energy (kWh) via GetPowerUsage.
 
         GetPowerUsage reports a running cumulative total (not per-bucket deltas),
-        so the most recent valid reading is the current meter value. A negative
-        value is the "logging off / no data" sentinel and is ignored.
+        so the current meter value is the most recent bucket. We take the latest
+        valid (>=0) bucket by timestamp rather than the maximum, so a reset
+        (ResetPowerLogging) within the window doesn't leave us stuck on a stale
+        pre-reset high; TOTAL_INCREASING then handles the drop. A negative value
+        is the "logging off / no data" sentinel and is skipped.
         """
         if not self.usage_supported:
             return None
@@ -155,10 +158,11 @@ class SamsungAcCoordinator(DataUpdateCoordinator[dict[str, str]]):
         except SamsungAcError:
             self.logger.debug("energy refresh failed", exc_info=True)
             return self.energy_kwh
-        valid = [e.power_kwh for e in entries if e.power_kwh is not None and e.power_kwh >= 0]
-        if valid:
-            self.energy_kwh = round(max(valid), 1)
-            self.async_update_listeners()
+        for e in sorted(entries, key=lambda x: x.time, reverse=True):
+            if e.power_kwh is not None and e.power_kwh >= 0:
+                self.energy_kwh = round(e.power_kwh, 1)
+                self.async_update_listeners()
+                break
         return self.energy_kwh
 
     # -- extra device commands (power usage/logging, nickname, region) --
