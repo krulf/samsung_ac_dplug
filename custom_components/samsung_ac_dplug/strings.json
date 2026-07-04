@@ -313,6 +313,10 @@
           "description": "The region code."
         }
       }
+    },
+    "get_power_debug": {
+      "name": "Read raw power values (diagnostic)",
+      "description": "Return the unit's raw power-metering values (USEDWATT, USEDPOWER, operating time, capability code, logging mode, a power-usage sample) to help diagnose what metering the unit supports."
     }
   },
   "selector": {

@@ -43,6 +43,7 @@ from .const import (
     MIN_TEMP,
     PRESET_TO_DEVICE,
     SERVICE_DELETE_SCHEDULE,
+    SERVICE_GET_POWER_DEBUG,
     SERVICE_GET_POWER_USAGE,
     SERVICE_GET_REGION_CODE,
     SERVICE_GET_SCHEDULES,
@@ -137,6 +138,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     )
     platform.async_register_entity_service(
         SERVICE_SET_REGION_CODE, SET_REGION_CODE_SCHEMA, "async_set_region_code_service"
+    )
+    platform.async_register_entity_service(
+        SERVICE_GET_POWER_DEBUG,
+        None,
+        "async_get_power_debug_service",
+        supports_response=SupportsResponse.ONLY,
     )
 
 
@@ -330,3 +337,8 @@ class SamsungAcClimate(SamsungAcEntity, ClimateEntity):
     @_service
     async def async_set_region_code_service(self, **kwargs: Any) -> None:
         await self.coordinator.async_set_region_code(kwargs[ATTR_CODE])
+
+    @_service
+    async def async_get_power_debug_service(self, **kwargs: Any) -> ServiceResponse:
+        """Return raw power-metering values, to characterize metering support."""
+        return await self.coordinator.async_power_debug()

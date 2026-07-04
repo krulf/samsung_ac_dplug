@@ -73,6 +73,22 @@ async def test_sensor_values(hass):
     filter_life = _suffixed(hass, "sensor", "filter_life")
     assert hass.states.get(filter_life).state == "80"  # 1 - 100/500
     assert hass.states.get(_suffixed(hass, "sensor", "error_code")).state == "OK"
+    # AC_ADD2_USEDTIME is tenths of an hour: STATE has "100" -> 10.0 h.
+    # (entity_id is name-based: "Operating time" -> ..._operating_time)
+    assert hass.states.get(_suffixed(hass, "sensor", "operating_time")).state == "10.0"
+
+
+async def test_power_debug_service(hass):
+    _, client = await setup_polling(hass)
+    cid = _only(hass, "climate")
+    resp = await hass.services.async_call(
+        DOMAIN, "get_power_debug", {ATTR_ENTITY_ID: cid}, blocking=True, return_response=True
+    )
+    data = resp[cid]
+    assert data["device_state"]["AC_ADD2_USEDTIME"] == "100"
+    assert data["usage_supported"] is False  # OPTIONCODE 2 has no bit 16384
+    assert data["logging_mode"] is False
+    assert data["power_usage_sample"] == []
 
 
 async def test_climate_controls(hass):

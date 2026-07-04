@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import Any
 import datetime
 from datetime import timedelta
 
@@ -139,6 +140,40 @@ class SamsungAcCoordinator(DataUpdateCoordinator[dict[str, str]]):
 
     async def async_set_region_code(self, code: str) -> None:
         await self._api.async_set_region_code(code)
+
+    async def async_power_debug(self) -> dict[str, Any]:
+        """Read the raw power-metering values (for diagnosing metering support).
+
+        Returns the relevant DeviceState attributes as-is plus a live
+        GetPowerLoggingMode and a short GetPowerUsage sample, so a user can share
+        a test reading (e.g. whether AC_ADD2_USEDWATT is a real live power value).
+        """
+        state = self.data or {}
+        oc = state.get("AC_ADD2_OPTIONCODE")
+        usage_bit = bool(int(oc) & 16384) if oc and oc.lstrip("-").isdigit() else None
+        raw = {
+            k: state.get(k)
+            for k in (
+                "AC_ADD2_OPTIONCODE", "AC_ADD2_USEDWATT", "AC_ADD2_USEDPOWER",
+                "AC_ADD2_USEDTIME", "AC_ADD_SETKWH", "AC_ADD2_CLEAR_POWERTIME",
+            )
+        }
+        result: dict[str, Any] = {"device_state": raw, "usage_supported": usage_bit}
+        try:
+            result["logging_mode"] = await self._api.async_get_power_logging_mode()
+        except SamsungAcError as err:
+            result["logging_mode"] = f"error: {err}"
+        end = dt_util.now()
+        try:
+            entries = await self._api.async_get_power_usage(
+                end - timedelta(hours=3), end, "Hour", tz=self._tz
+            )
+            result["power_usage_sample"] = [
+                {"time": e.time.isoformat(), "kwh": e.power_kwh, "hours": e.hours} for e in entries
+            ]
+        except SamsungAcError as err:
+            result["power_usage_sample"] = f"error: {err}"
+        return result
 
     async def async_set(self, attr: str, value: str) -> None:
         if self.stream is not None:

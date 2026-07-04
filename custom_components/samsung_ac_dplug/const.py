@@ -145,6 +145,7 @@ SERVICE_RESET_POWER_LOGGING = "reset_power_logging"
 SERVICE_SET_NICKNAME = "set_nickname"
 SERVICE_GET_REGION_CODE = "get_region_code"
 SERVICE_SET_REGION_CODE = "set_region_code"
+SERVICE_GET_POWER_DEBUG = "get_power_debug"
 
 ATTR_UNIT = "unit"
 ATTR_START = "start"

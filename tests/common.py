@@ -65,6 +65,7 @@ def _arm_api(mock):
     mock.async_delete_schedule = AsyncMock()
     mock.async_get_schedules = AsyncMock(return_value=[])
     mock.async_get_power_usage = AsyncMock(return_value=[])
+    mock.async_get_power_logging_mode = AsyncMock(return_value=False)
     mock.async_set_power_logging = AsyncMock()
     mock.async_reset_power_logging = AsyncMock()
     mock.async_set_nickname = AsyncMock()

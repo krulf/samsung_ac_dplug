@@ -48,6 +48,13 @@ def _error(v: str | None) -> str:
     return v
 
 
+def _deci_hours(v: str | None) -> float | None:
+    """AC_ADD2_USEDTIME is a cumulative operating time in tenths of an hour;
+    negative means the meter is off / no data."""
+    i = _to_int(v)
+    return round(i / 10, 1) if i is not None and i >= 0 else None
+
+
 def _filter_life(state: dict[str, str]) -> int | None:
     """Remaining filter life as a percentage.
 
@@ -106,7 +113,8 @@ SENSORS: tuple[AcSensor, ...] = (
         key="used_time",
         translation_key="used_time",
         attr=ATTR_USED_TIME,
-        native_unit_of_measurement=UnitOfTime.MINUTES,
+        convert=_deci_hours,
+        native_unit_of_measurement=UnitOfTime.HOURS,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.TOTAL_INCREASING,
         entity_category=EntityCategory.DIAGNOSTIC,

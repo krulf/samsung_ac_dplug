@@ -313,6 +313,10 @@
           "description": "Il codice regione."
         }
       }
+    },
+    "get_power_debug": {
+      "name": "Leggi valori consumi grezzi (diagnostica)",
+      "description": "Restituisce i valori grezzi di misurazione consumi dell'unità (USEDWATT, USEDPOWER, ore di funzionamento, codice capability, stato logging, un campione di storico) per capire cosa supporta l'unità."
     }
   },
   "selector": {

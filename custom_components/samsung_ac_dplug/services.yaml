@@ -143,3 +143,9 @@ set_region_code:
       example: "EU"
       selector:
         text:
+
+get_power_debug:
+  target:
+    entity:
+      integration: samsung_ac_dplug
+      domain: climate
