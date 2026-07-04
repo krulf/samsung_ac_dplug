@@ -34,9 +34,22 @@ jobs:
           if [ "$VER" != "$TAG" ]; then
             echo "Tag $TAG does not match manifest version $VER"; exit 1
           fi
+      - name: Build release notes from CHANGELOG
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          awk -v ver="$VER" '
+            $0 ~ "^## " ver "( |$)" {f=1; next}
+            f && /^## / {exit}
+            f {print}
+          ' CHANGELOG.md | sed '/./,$!d' > RELEASE_BODY.md
+          if [ ! -s RELEASE_BODY.md ]; then
+            echo "See [CHANGELOG.md](CHANGELOG.md) for details." > RELEASE_BODY.md
+          fi
+          echo "----- release body -----"; cat RELEASE_BODY.md
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: RELEASE_BODY.md
           generate_release_notes: true
           # Attach the provisioning helper as an asset so it downloads directly
           # (release assets are served as attachments) via
