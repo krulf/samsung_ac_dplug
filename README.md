@@ -1,5 +1,10 @@
 # Samsung AC (DPLUG / 2878) — Home Assistant integration
 
+This fork is a test if it possible to lower the minimum temperature you can set the
+air conditioner to as some go lower than the 16 degree celcius setting in the
+original plugin. Only changed the MIN_TEMP from 16 to 8 in const.py and the 60
+degrees fahrenheit to 48 in climate.py.
+
 Local control for **old Samsung air conditioners** (AR\*\*HSFS generation, ~2013–2015,
 Wi-Fi modules like `SWL-B70F`) that speak the legacy **DPLUG / AC14K** protocol over
 TLS on **port 2878**. These units were dropped by SmartThings — this brings them back,
