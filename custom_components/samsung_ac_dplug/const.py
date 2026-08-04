@@ -120,7 +120,7 @@ PANEL_TO_DEVICE = {"open": "Open", "close": "Close"}
 # filter-service action the official app performs.
 FILTER_TIME_TO_DEVICE = {"180": "180", "300": "300", "500": "500", "700": "700"}
 
-MIN_TEMP = 16
+MIN_TEMP = 8
 MAX_TEMP = 30
 
 # On-device scheduler services. These drive the air conditioner's built-in

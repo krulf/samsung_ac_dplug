@@ -169,7 +169,7 @@ class SamsungAcClimate(SamsungAcEntity, ClimateEntity):
 
     @property
     def min_temp(self) -> float:
-        return 60 if self.temperature_unit == UnitOfTemperature.FAHRENHEIT else MIN_TEMP
+        return 46 if self.temperature_unit == UnitOfTemperature.FAHRENHEIT else MIN_TEMP
 
     @property
     def max_temp(self) -> float:
